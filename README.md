@@ -19,6 +19,7 @@ And just to cover myself, I will use the choice favorite term 'for educational p
 ## Table of Contents
 
 - [Credits](#credits)
+- [Installation](#installation)
 - [CustomUtilities](#customutilities)
 - [InvestigateLogs](#investigatelogs)
 - [NetworkEnumeration](#networkenumeration)
@@ -33,6 +34,18 @@ I did not keep track of all of the sources used to create this resource. But not
 3. Mike Haggis
 
 **NOTE:** Some of the utilities will require administrative privileges.
+
+### Installation
+When installing modules you will generally install them in $env:USERPROFILE\Documents\WindowsPowerShell\Modules  
+In this directory you will have to create a directory for each module with the same name as the module. E.g. CheatSheets or PrivacyAndSecurity  
+  
+Then you will need to create a module manifest with the following cmdlet.  
+Please provide the full path to the module directory:  
+    New-ModuleManifest -Path "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\CheatSheets\CheatSheets.psd1" `
+        -RootModule "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\CheatSheets\CheatSheets.psm1" `
+        -Author "Fred Twostairs" `
+        -Description "I am a description of this module" `
+        -ModuleVersion "1.0.0"
 
 ### CustomUtilities
 This module contains useful utilities for working with files, data and general tasks.

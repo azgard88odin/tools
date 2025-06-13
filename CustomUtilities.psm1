@@ -258,7 +258,20 @@ function Reset-NetworkStack {
     Write-Host "Networking stack restart complete."
 }
 
+Function ConvertTo-Unicode {
+    Begin {
+        $output=[System.Text.StringBuilder]::new()
+    }
+    Process {
+        $output.Append($(
+            if ($_ -is [int]) { [char]::ConvertFromUtf32($_) }
+            else { [string]$_ }
+        )) | Out-Null
+    }
+    End { $output.ToString() }
+}
+
 Export-ModuleMember -Function ConvertFrom-Bytes, ConvertTo-Bytes, Find-FileLargerThan, ConvertTo-Base64, ConvertFrom-Base64,
 Get-StringHash, Get-InstalledSoftware, Get-StartupPrograms, ConvertFrom-Hours, ConvertFrom-Minutes, ConvertFrom-DateToISO8601,
 ConvertFrom-HexToAscii, ConvertFrom-AsciiToHex, ConvertFrom-PowerShellToBatch, Test-FileHash,
-Reset-NetworkStack
+Reset-NetworkStack, ConvertTo-Unicode

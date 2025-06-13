@@ -110,6 +110,7 @@ function Set-TaskbarAlignment {
 function Show-CustomCommands {
     $modules = @(
         "PrivacyAndSecurity",
+        "CheatSheets",
         "CustomUtilities",
         "InvestigateLogs",
         "NetworkEnumeration",
@@ -135,6 +136,7 @@ function Show-CustomCommands {
 function Update-CustomModules {
     $modules = @(
         "PrivacyAndSecurity",
+        "CheatSheets",
         "CustomUtilities",
         "InvestigateLogs",
         "NetworkEnumeration",

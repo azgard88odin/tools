@@ -224,6 +224,41 @@ function Test-FileHash {
     return $fileHash -eq $CheckSum
 }
 
+function Reset-NetworkStack {
+
+    Write-Host "Flushing DNS..."
+    ipconfig /flushdns
+
+    Write-Host "Releasing IP addresses..."
+    ipconfig /release
+
+    Write-Host "Renewing IP addresses..."
+    ipconfig /renew
+
+    Write-Host "Restarting DNS Client service..."
+    Restart-Service -Name "Dnscache" -Force
+
+    Write-Host "Restarting DHCP Client service..."
+    Restart-Service -Name "Dhcp" -Force
+
+    # Optional: restart TCP/IP stack (requires reboot)
+    # netsh int ip reset
+
+    # Optional: disable and re-enable network adapters
+    $adapters = Get-NetAdapter -Physical | Where-Object { $_.Status -eq 'Up' }
+
+    foreach ($adapter in $adapters) {
+        Write-Host "Disabling adapter: $($adapter.Name)"
+        Disable-NetAdapter -Name $adapter.Name -Confirm:$false
+        Start-Sleep -Seconds 3
+        Write-Host "Enabling adapter: $($adapter.Name)"
+        Enable-NetAdapter -Name $adapter.Name -Confirm:$false
+    }
+
+    Write-Host "Networking stack restart complete."
+}
+
 Export-ModuleMember -Function ConvertFrom-Bytes, ConvertTo-Bytes, Find-FileLargerThan, ConvertTo-Base64, ConvertFrom-Base64,
 Get-StringHash, Get-InstalledSoftware, Get-StartupPrograms, ConvertFrom-Hours, ConvertFrom-Minutes, ConvertFrom-DateToISO8601,
-ConvertFrom-HexToAscii, ConvertFrom-AsciiToHex, ConvertFrom-PowerShellToBatch, Test-FileHash
+ConvertFrom-HexToAscii, ConvertFrom-AsciiToHex, ConvertFrom-PowerShellToBatch, Test-FileHash,
+Reset-NetworkStack

@@ -16,6 +16,7 @@ $rocket  Common Startup Procedure
 ----------------------------
 git init                                              # Initialize a new repo
 git branch -m main                                    # Rename default branch to 'main'
+git add .                                             # Add all files/directories in current directory
 git remote add origin <url>                           # Add remote repository
 git pull origin main --allow-unrelated-histories      # Pull remote main branch (if repo exists)
 git push -u origin main                               # Push and set upstream
@@ -58,9 +59,11 @@ $crossMark  Undo / Fix
 git reset <file>                                      # Unstage file
 git checkout -- <file>                                # Discard changes in file
 git revert <commit>                                   # Create a new commit to undo one
+git revert --hard HEAD                                # Return to last commited state
 
 $magnifyingGlass  Extras
 ---------
+git log                                               # Commit history
 git diff                                              # Show unstaged changes
 git stash                                             # Stash current changes
 git stash pop                                         # Reapply stashed changes
@@ -70,4 +73,91 @@ git stash pop                                         # Reapply stashed changes
     Write-Host $cheatSheet -ForegroundColor Cyan
 }
 
-Export-ModuleMember -Function Show-GitCheatSheet
+function Show-RegexCheatSheet {
+    $anchor = 0x2693 | ConvertTo-Unicode
+    $characterClass = 0x1F524 | ConvertTo-Unicode
+    $specialChar = 0x1F4B2 | ConvertTo-Unicode
+    $groupRange = 0x1F523 | ConvertTo-Unicode
+    $quantifier = 0x2734,0xFE0F | ConvertTo-Unicode
+    $assertion = 0x1F506 | ConvertTo-Unicode
+    $stringReplacement = 0x267B,0xFE0F | ConvertTo-Unicode
+
+    $cheatSheet = @"
+Regex Cheat Sheet
+=================
+
+$anchor Anchors
+------------------
+^                                                   # Beginning of the line
+$                                                   # End of string or end of line in multiline patterns
+\A                                                  # Start of string
+\Z                                                  # End of string
+\b                                                  # Word boundry
+\B                                                  # Not word boundry
+\<                                                  # Start of word
+\>                                                  # End of word
+
+$characterClass Character Classes
+------------------
+\c                                                  # Control character
+\s                                                  # White space
+\S                                                  # Not white space
+\d                                                  # Digit character
+\D                                                  # Not digit character
+\w                                                  # Word character
+\W                                                  # Not word character
+\x                                                  # Hexidecimal digit
+\O                                                  # Octal digit
+
+$specialChar Special Characters
+------------------
+\n                                                  # Newline character
+\r                                                  # Carriage return
+\t                                                  # Tab
+\v                                                  # Vertical tab
+\f                                                  # Form feed
+
+$groupRange Groups and Ranges
+------------------
+.                                                   # Any character except newline
+(a|b)                                               # a or b
+(...)                                               # Group
+(?:...)                                              # Passive non-capturing group
+[abc]                                               # Range a or b or c
+[^abc]                                              # Not a or b or c
+[a-q]                                               # Lowercase letter from a to q
+[A-Q]                                               # Uppercase letter from A to Q
+[0-7]                                               # Digit from 0 to 7
+
+$quantifier Quantifiers
+------------------
+*                                                   # 0 or more (non greedy)
++                                                   # 1 or more (greedy)
+?                                                   # 0 or 1 (optional)
+{3}                                                 # Exactly 3 times
+{3,}                                                # 3 or more times
+{3,5}                                               # 3 to 5 times
+
+$assertion Assertions
+------------------
+?=                                                  # Positive Lookahead
+?!                                                  # Negative Lookahead
+?<=                                                 # Positive Lookbehind
+?!=                                                 # Negative Lookbehind
+?>                                                  # Once only
+?()                                                 # Condition [if then]
+?()|                                                # Condition [if then else]
+
+$stringReplacement String replacement
+------------------
+# NOTE: some regex implementations use \ instead of $
+`$n                                                 # nth non-passive group
+`$2                                                 # 'xyz' in /^(abc(xyz))$/
+`$1                                                 # 'xyz' in /^(?:abc)(xyz)$/
+`$+                                                 # Last matched string
+`$&                                                 # Entire matched string
+"@
+    Write-Host $cheatSheet -ForegroundColor Cyan
+}
+
+Export-ModuleMember -Function Show-GitCheatSheet, Show-RegexCheatSheet

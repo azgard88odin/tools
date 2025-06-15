@@ -41,10 +41,11 @@ In this directory you will have to create a directory for each module with the s
   
 Then you will need to create a module manifest with the following cmdlet.  
 Please provide the full path to the module directory:  
-    New-ModuleManifest -Path "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\CheatSheets\CheatSheets.psd1" `
-        -RootModule "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\CheatSheets\CheatSheets.psm1" `
-        -Author "Fred Twostairs" `
-        -Description "I am a description of this module" `
+
+    New-ModuleManifest -Path "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\CheatSheets\CheatSheets.psd1" `  
+        -RootModule "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\CheatSheets\CheatSheets.psm1" `  
+        -Author "Fred Twostairs" `  
+        -Description "I am a description of this module" `  
         -ModuleVersion "1.0.0"
 
 ### CustomUtilities

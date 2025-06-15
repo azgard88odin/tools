@@ -126,6 +126,7 @@ function Show-CustomCommands {
                 $results += [PSCustomObject]@{
                     'Command' = $_
                     'Module' = $moduleName
+                    'Version' = $module.Version
                 }
             }
         }
@@ -144,10 +145,10 @@ function Update-CustomModules {
         )
     
     $modules | ForEach-Object {
-        Remove-Module -Name $_ -ErrorAction SilentlyContinue
+        Remove-Module -Name $_ -Force -ErrorAction SilentlyContinue
     }
     $modules | ForEach-Object {
-        Import-Module -Name $_ -ErrorAction SilentlyContinue
+        Import-Module -Name $_ -Force
     }
 }
 

@@ -242,7 +242,7 @@ $brain ADVANCED EXAMPLE
 (ip.src == 10.0.0.1 || ip.src == 192.168.1.1) && tcp.port == 80 && !tls
 "@
 
-    Write-Host $cheatSheet -ForegroundColor Yellow
+    Write-Host $cheatSheet -ForegroundColor Cyan
 }
 
 Export-ModuleMember -Function Show-GitCheatSheet, Show-RegexCheatSheet, Show-WiresharkCheatSheet

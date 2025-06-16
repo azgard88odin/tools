@@ -150,7 +150,7 @@ function Start-ARPScan {
         Write-Warning "Scan took longer than 15 seconds, ARP entries may have been flushed. Recommend lowering DelayMS parameter"
     }
 
-    $Hosts = $Hosts | Where-Object {$_ -match "dynamic"} | % {($_.Trim() -replace " {1,}",",") | ConvertFrom-Csv -Header "IP","MACAddress"} | Select-Object IP, @{Name='MACAddress'; Expression={ $_.MACAddress -replace '-',':' }}
+    $Hosts = $Hosts | Where-Object {$_ -match "dynamic"} | ForEach-Object {($_.Trim() -replace " {1,}",",") | ConvertFrom-Csv -Header "IP","MACAddress"} | Select-Object IP, @{Name='MACAddress'; Expression={ $_.MACAddress -replace '-',':' }}
     $hostCount = $Hosts.Count
     $Hosts = $Hosts | Where-Object {$_.IP -in $IP}
 
@@ -268,5 +268,15 @@ function Get-ActiveNetworkInterface {
     return Get-NetAdapter | Where-Object { $_.InterfaceIndex -eq $defaultRoute.InterfaceIndex -and $_.HardwareInterface -eq "True" }
 }
 
+function Get-Whois {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$IP
+    )
+    $url = "http://ip-api.com/json/" + $IP + "?fields=29713"
+    return (Invoke-WebRequest -Uri $url).Content | ConvertFrom-Json | ConvertTo-Json -Depth 10
+}
+
 Export-ModuleMember -Function Connect-WiFiNetwork, Get-WiFiGeneration, Get-WirelessAccessPoints, Get-CurrentSSID, Show-WirelessAccessPoints, 
-    Start-ARPScan, Confirm-OpenPort, Start-PingSweep, Start-PortScanSequential, Start-PortScanSelected, Set-StaticIP, Set-DynamicIP, Get-ActiveNetworkInterface
+    Start-ARPScan, Confirm-OpenPort, Start-PingSweep, Start-PortScanSequential, Start-PortScanSelected, Set-StaticIP, Set-DynamicIP, Get-ActiveNetworkInterface,
+    Get-Whois

@@ -20,6 +20,7 @@ And just to cover myself, I will use the choice favorite term 'for educational p
 
 - [Credits](#credits)
 - [Installation](#installation)
+- [CheatSheets](#cheatsheets)
 - [CustomUtilities](#customutilities)
 - [InvestigateLogs](#investigatelogs)
 - [NetworkEnumeration](#networkenumeration)
@@ -47,6 +48,11 @@ Please provide the full path to the module directory:
         -Author "Fred Twostairs" `  
         -Description "I am a description of this module" `  
         -ModuleVersion "1.0.0"
+
+### CheatSheets
+This module contains some quick reference cheat sheets. I prefer a quick reference on the commandline than having to go search for one or open up one of my pdf versions.  
+Look inside to see the different kinds of cheat sheets I currently have.  
+Feel free to modify and add to the cheatsheets
 
 ### CustomUtilities
 This module contains useful utilities for working with files, data and general tasks.

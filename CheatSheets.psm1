@@ -122,7 +122,7 @@ $groupRange Groups and Ranges
 .                                                   # Any character except newline
 (a|b)                                               # a or b
 (...)                                               # Group
-(?:...)                                              # Passive non-capturing group
+(?:...)                                             # Passive non-capturing group
 [abc]                                               # Range a or b or c
 [^abc]                                              # Not a or b or c
 [a-q]                                               # Lowercase letter from a to q
@@ -160,4 +160,89 @@ $stringReplacement String replacement
     Write-Host $cheatSheet -ForegroundColor Cyan
 }
 
-Export-ModuleMember -Function Show-GitCheatSheet, Show-RegexCheatSheet
+function Show-WiresharkCheatSheet {
+    $pushpin = 0x1F4CC | ConvertTo-Unicode
+    $globe = 0x1F310 | ConvertTo-Unicode
+    $inputNumbers = 0x1F522 | ConvertTo-Unicode
+    $lock = 0x1F512 | ConvertTo-Unicode
+    $gear = 0x2699 | ConvertTo-Unicode
+    $repeat = 0x1F501 | ConvertTo-Unicode
+    $magnifyingGlass = 0x1F50D | ConvertTo-Unicode
+    $crossMark = 0x274C | ConvertTo-Unicode
+    $brain = 0x1F9E0 | ConvertTo-Unicode
+
+    $cheatSheet = @"
+Wireshark Filter Cheat Sheet
+============================
+
+$pushpin BASICS
+---------
+frame                                      # Show all packets
+ip                                         # Only IP traffic
+tcp                                        # Only TCP packets
+udp                                        # Only UDP packets
+icmp                                       # Only ICMP packets
+
+$globe IP ADDRESS FILTERS
+---------------------
+ip.src == 192.168.1.10                     # Source IP
+ip.dst == 8.8.8.8                          # Destination IP
+ip.addr == 10.0.0.5                        # Any match for IP
+ip.addr == 192.168.0.0/16                  # Match IP subnet
+ip.src == 192.168.1.10 || ip.src == 10.0.0.20   # Multiple source IPs
+
+$inputNumbers PORT FILTERS
+---------------
+tcp.srcport == 443                         # Source TCP port
+udp.dstport == 53                          # Destination UDP port
+tcp.port == 80                             # Specific port (any direction)
+tcp.port == 80 || tcp.port == 443          # Match multiple ports
+
+$lock PROTOCOL-SPECIFIC FILTERS
+----------------------------
+http                                       # HTTP traffic
+tls / ssl                                  # TLS/SSL traffic
+dns                                        # DNS queries/responses
+bootp                                      # DHCP (BOOTP)
+arp                                        # ARP traffic
+ftp                                        # FTP protocol
+tcp.port == 22                             # SSH traffic
+udp.port == 123                            # NTP
+icmp                                       # ICMP
+
+$gear TCP FLAGS / CONTROL
+-----------------------
+tcp.flags.syn == 1 && tcp.flags.ack == 0   # SYN
+tcp.flags.syn == 1 && tcp.flags.ack == 1   # SYN-ACK
+tcp.flags.reset == 1                       # RST
+tcp.flags.fin == 1                         # FIN
+tcp.flags.ack == 1                         # ACK
+
+$repeat STREAMS & CONVERSATIONS
+--------------------------
+tcp.stream eq 0                            # First TCP stream
+udp.stream eq 0                            # First UDP stream
+ip.addr == 192.168.1.10 && ip.addr == 10.0.0.20   # Specific conversation
+
+$magnifyingGlass SEARCH & FILTER
+------------------
+frame contains "password"                  # Search for string
+tcp.len > 0                                # Packets with data
+tcp.analysis.flags                         # Packets with errors
+frame.len > 500                            # Large packets
+
+$crossMark EXCLUSIONS
+-------------
+!dns                                       # Exclude DNS
+!(ip.addr == 192.168.1.10)                 # Exclude IP
+!(tcp.port == 443)                         # Exclude port
+
+$brain ADVANCED EXAMPLE
+-------------------
+(ip.src == 10.0.0.1 || ip.src == 192.168.1.1) && tcp.port == 80 && !tls
+"@
+
+    Write-Host $cheatSheet -ForegroundColor Yellow
+}
+
+Export-ModuleMember -Function Show-GitCheatSheet, Show-RegexCheatSheet, Show-WiresharkCheatSheet

@@ -819,7 +819,8 @@ function Show-ActiveRemoteConnections {
         $blackListContent = (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/stamparm/ipsum/refs/heads/master/ipsum.txt").Content
 
         # Remove header items from the blacklist
-        [datetime]$lastUpdateString = ($blackListContent | Select-String "^# Last update.+") -replace "# Last update: ",""
+        $updateLine = (($blackListContent -split "`n" | Where-Object { $_ -match "Last update:" }) -replace "# Last update: ","").ToString().Trim()
+        [datetime]$lastUpdateString = $updateLine.ToString("o")
         $blackList = $blackListContent | Select-Object -Skip 7 | ForEach-Object { $_ -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' | Out-Null; $matches[0] }
 
         $configData | Add-Member -NotePropertyName 'LastUpdateBlackList' -NotePropertyValue $lastUpdateString.ToString("o")
@@ -843,7 +844,7 @@ function Show-ActiveRemoteConnections {
         $blackListContent = (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/stamparm/ipsum/refs/heads/master/ipsum.txt").Content
 
         # Remove header items from the blacklist
-        [datetime]$lastUpdateString = ($blackListContent | Select-String "^# Last update.+") -replace "# Last update: ",""
+        [datetime]$lastUpdateString = (($blackListContent -split "`n" | Where-Object { $_ -match "Last update:" }) -replace "# Last update: ","").ToString().Trim()
         $blackList = $blackListContent -split "`n" | Select-Object -Skip 7 | ForEach-Object { $_ -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' | Out-Null; $matches[0] }
 
         $configData.LastUpdateBlackList = $lastUpdateString.ToString("o")
@@ -1346,6 +1347,52 @@ function Disable-BlockImpersonatedTools {
     Write-Host "Block use of copied or impersonated system tools (preview) has been disabled."
 }
 
+function Disable-MicrosoftWidgets {
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
+    if (-not (Test-Path -Path $regPath)) {
+        New-Item -Path $regPath -Force | Out-Null
+    }
+
+    Set-ItemProperty -Path $regPath -Name "AllowNewsAndInterests" -Type DWord -Value 0
+
+    $taskbarRegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    Set-ItemProperty -Path $taskbarRegPath -Name "TaskbarDa" -Type DWord -Value 0
+
+    $widgetsProc = Get-Process -Name "Widgets" -ErrorAction SilentlyContinue
+    if ($widgetsProc) {
+        $widgetsProc | Stop-Process -Force
+    }
+
+    $widgetsServiceProc = Get-Process -Name "WidgetService" -ErrorAction SilentlyContinue
+    if ($widgetsServiceProc) {
+        $widgetsServiceProc | Stop-Process -Force
+    }
+}
+
+function Disable-StartMenuNetworkCapabilities {
+    # Disable Web search in start menu
+    $regPath = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
+    if (-not (Test-Path -Path $regPath)) {
+        New-Item -Path $regPath -Force | Out-Null
+    }
+    Set-ItemProperty -Path $regPath -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1
+
+    # Turn off Bing web search integration
+    $searchRegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search"
+    if (-not (Test-Path $searchRegPath)) {
+        New-Item -Path $searchRegPath -Force | Out-Null
+    }
+    Set-ItemProperty -Path $searchRegPath -Name "BingSearchEnabled" -Type DWord -Value 0
+    Set-ItemProperty -Path $searchRegPath -Name "CortanaConsent" -Type DWord -Value 0
+
+    $firewallRule = Get-NetFirewallRule -DisplayName "Block StartMenuExperienceHost" -ErrorAction SilentlyContinue
+    if (-not $firewallRule) {
+        New-NetFirewallRule -DisplayName "Block StartMenuExperienceHost" `
+            -Program "C:\Windows\SystemApps\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\StartMenuExperienceHost.exe" `
+            -Action Block -Direction Outbound | Out-Null
+    }  
+}
+
 Export-ModuleMember -Function Get-GeoLocationInfo, Grant-LocationAccess, Revoke-LocationAccess, 
     Disable-SSL2.0, Disable-SSL3.0, Disable-TLS1.0, Disable-TLS1.1, Enable-TLS1.2, Enable-TLS1.3, 
     Get-SecureProtocolStatus, Enable-SecureProtocols, Show-ActiveRemoteConnections,
@@ -1385,4 +1432,5 @@ Export-ModuleMember -Function Get-GeoLocationInfo, Grant-LocationAccess, Revoke-
     Enable-AdvancedRansomwareProtection, Disable-AdvancedRansomwareProtection,
     Enable-BlockWebshellCreation, Disable-BlockWebshellCreation,
     Enable-BlockSafeModeReboot, Disable-BlockSafeModeReboot,
-    Enable-BlockImpersonatedTools, Disable-BlockImpersonatedTools
+    Enable-BlockImpersonatedTools, Disable-BlockImpersonatedTools,
+    Disable-MicrosoftWidgets, Disable-StartMenuNetworkCapabilities

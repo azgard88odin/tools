@@ -271,7 +271,40 @@ Function ConvertTo-Unicode {
     End { $output.ToString() }
 }
 
+function Convert-ImageFormat {
+    param(
+        [string]$InputFilePath,
+        [string]$OutputFilePath,
+
+        [ValidateSet("jpeg","jpg","png","bmp")]
+        [string]$Format
+    )
+
+    Add-Type -AssemblyName System.Drawing
+
+    if (-not(Test-Path -Path $InputFilePath)) {
+        Write-Error "Input file not found: $InputFilePath"
+        return
+    }
+
+    if ($Format -eq "jpg") {
+        $Format = "jpeg"
+    }
+
+    try {
+        $inputFullPath = (Resolve-Path -Path $InputFilePath).Path
+        $outputFullPath = (Resolve-Path (Split-Path $OutputFilePath -Parent)).Path + "\" + (Split-Path $OutputFilePath -Leaf)
+        $image = [System.Drawing.Image]::FromFile($inputFullPath)
+        $formatEnum = [System.Drawing.Imaging.ImageFormat]::$Format
+        $image.Save($outputFullPath, $formatEnum)
+        $image.Dispose()
+        Write-Output "Converted '$inputFullPath' to '$outputFullPath' as $Format"
+    } catch {
+        Write-Error "Error coverting image: $_"
+    }
+}
+
 Export-ModuleMember -Function ConvertFrom-Bytes, ConvertTo-Bytes, Find-FileLargerThan, ConvertTo-Base64, ConvertFrom-Base64,
 Get-StringHash, Get-InstalledSoftware, Get-StartupPrograms, ConvertFrom-Hours, ConvertFrom-Minutes, ConvertFrom-DateToISO8601,
 ConvertFrom-HexToAscii, ConvertFrom-AsciiToHex, ConvertFrom-PowerShellToBatch, Test-FileHash,
-Reset-NetworkStack, ConvertTo-Unicode
+Reset-NetworkStack, ConvertTo-Unicode, Convert-ImageFormat

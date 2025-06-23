@@ -152,6 +152,157 @@ function Update-CustomModules {
     }
 }
 
+function Get-CyberNews {
+    param(
+        [int]$EventsPerSource = 5
+    )
+      
+    # Ensure BurntToast is installed
+    if (-not (Get-Module -ListAvailable -Name BurntToast)) {
+        Install-Module -Name BurntToast -Force -Scope CurrentUser
+    }
+    Import-Module BurntToast
+
+    $htmlFile = "$env:TEMP\CyberNewsReport.html"
+
+    # Define RSS feeds
+    $feeds = @(
+        "https://www.bleepingcomputer.com/feed/",
+        "https://feeds.feedburner.com/TheHackersNews",
+        "https://www.darkreading.com/rss.xml",
+        "https://www.cyberscoop.com/feed/",
+        "https://krebsonsecurity.com/feed/"
+    )
+
+    $newsItems = @()
+    foreach ($url in $feeds) {
+        try {
+            $rss = [xml](Invoke-WebRequest -Uri $url -UseBasicParsing).Content
+            $source = $rss.rss.channel.title
+            $items = $rss.rss.channel.item | Select-Object -First $EventsPerSource
+
+            foreach ($item in $items) {
+                $newsItems += [PSCustomObject]@{
+                    Title  = if ($item.title.'#cdata-section') { $item.title.'#cdata-section' } else { $item.title }
+                    Link   = if ($item.link.'#cdata-section')  { $item.link.'#cdata-section'  } else { $item.link }
+                    Source = $source
+                }
+            }
+        } catch {
+            Write-Warning "Failed to fetch or parse feed: $url"
+        }
+    }
+
+    $htmlContent = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="dark light">
+    <title>Cybersecurity Headlines</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --link-color: #64b5f6;
+            --source-color: #90caf9;
+        }
+
+        .light-mode {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --link-color: #0078d7;
+            --source-color: #0066cc;
+        }
+
+        body {
+            font-family: Segoe UI, sans-serif;
+            margin: 2em;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1 {
+            color: var(--text-color);
+        }
+
+        .source {
+            font-size: 1.2em;
+            color: var(--source-color);
+            margin-top: 1em;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 0.5em 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--link-color);
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-button {
+            position: fixed;
+            top: 1em;
+            right: 1em;
+            padding: 0.5em 1em;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .light-mode .toggle-button {
+            background-color: #ccc;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-button" onclick="toggleTheme()">Toggle Theme</button>
+    <h1>🛡️ Top Cybersecurity Headlines</h1>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+    </script>
+"@
+
+    # Group by source
+    $grouped = $newsItems | Group-Object Source
+    foreach ($group in $grouped) {
+        $htmlContent += "<div class='source'>$($group.Name)</div><ul>"
+        foreach ($item in $group.Group) {
+            $htmlContent += "<li><a href='$($item.Link)' target='_blank'>$($item.Title)</a></li>"
+        }
+        $htmlContent += "</ul>"
+    }
+
+    $htmlContent += "</body></html>"
+
+    # Save HTML
+    $htmlContent | Set-Content -Path $htmlFile -Encoding UTF8
+
+    # Open in default web browser
+    Start-Process $htmlFile
+
+    # Toast Notification
+    New-BurntToastNotification -Text "Cybersecurity News Ready", "Top stories opened in your browser"
+}
+
 Export-ModuleMember -Function Set-DesktopWallpaper, Set-LockScreenWallpaper, Show-CryptoRate,
 Show-CryptoRates, Get-CryptoPrices, Set-AutoHideTaskbar, Set-TaskbarAlignment, Show-CustomCommands,
-Update-CustomModules
+Update-CustomModules, Show-CyberNews

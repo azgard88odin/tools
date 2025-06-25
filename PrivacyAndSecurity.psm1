@@ -1393,6 +1393,137 @@ function Disable-StartMenuNetworkCapabilities {
     }  
 }
 
+function ConvertFrom-SecureStringToPlainText {
+    param ([System.Security.SecureString]$SecureString)
+    $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+    try {
+        [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+    }
+    finally {
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+    }
+}
+
+function Get-KeyIV {
+    param (
+        [string]$Password,
+        [byte[]]$Salt,
+        [int]$Iterations = 100000
+    )
+
+    $pbkdf2 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes($Password, $Salt, $Iterations)
+    return @{
+        Key = $pbkdf2.GetBytes(32)  # AES-256
+        IV  = $pbkdf2.GetBytes(16)  # AES block size
+    }
+}
+
+function Remove-FileWithOverwrite {
+    param (
+        [string]$FilePath,
+        [int]$Passes = 50
+    )
+
+    $FilePathFull = (Resolve-Path -Path $FilePath).Path
+    $PathDirectory = [System.IO.Path]::GetDirectoryName($FilePathFull)
+
+    if (-not (Test-Path $FilePathFull)) {
+        Write-Warning "File not found: $FilePathFull"
+        return
+    }
+
+    $fileInfo = Get-Item $FilePathFull
+    $length = $fileInfo.Length
+
+    try {
+        for ($i = 1; $i -le $Passes; $i++) {
+            $randomData = New-Object byte[] $length
+            [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($randomData)
+            [System.IO.File]::WriteAllBytes($FilePathFull, $randomData)
+        }
+
+        # Rename file before deletion to mask name
+        $newName = [guid]::NewGuid().ToString()
+        Rename-Item -Path $FilePathFull -NewName $newName
+
+        $newFilePathFull = Join-Path -Path $PathDirectory -ChildPath $newName
+        Remove-Item -Path $newFilePathFull -Force
+
+        Write-Host "Securely deleted: $FilePath"
+    } catch {
+        Write-Error "Failed to securely delete: $FilePath"
+    }
+}
+
+
+function Protect-FileBasic {
+    param (
+        [string]$InputFile,
+        [string]$OutputFile
+    )
+
+    $securePassword = Read-Host "Enter password to encrypt" -AsSecureString
+    $password = ConvertFrom-SecureStringToPlainText $securePassword
+
+    $salt = New-Object byte[] 16
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($salt)
+
+    $keys = Get-KeyIV -Password $password -Salt $salt
+
+    $aes = [System.Security.Cryptography.Aes]::Create()
+    $aes.Key = $keys.Key
+    $aes.IV  = $keys.IV
+
+    $plainText = Get-Content -Path $InputFile -Raw
+    $plainBytes = [System.Text.Encoding]::UTF8.GetBytes($plainText)
+
+    $ms = New-Object System.IO.MemoryStream
+    $cs = New-Object System.Security.Cryptography.CryptoStream $ms, $aes.CreateEncryptor(), 'Write'
+    $cs.Write($plainBytes, 0, $plainBytes.Length)
+    $cs.Close()
+
+    $cipherData = $ms.ToArray()
+
+    # Prepend salt to ciphertext and write to file
+    [System.IO.File]::WriteAllBytes($OutputFile, $salt + $cipherData)
+
+    Write-Host "File encrypted and saved to $OutputFile"
+}
+
+function Unprotect-FileBasic {
+    param (
+        [string]$InputFile,
+        [string]$OutputFile
+    )
+
+    $securePassword = Read-Host "Enter password to decrypt" -AsSecureString
+    $password = ConvertFrom-SecureStringToPlainText $securePassword
+
+    $allBytes = [System.IO.File]::ReadAllBytes($InputFile)
+
+    $salt = $allBytes[0..15]
+    $cipherBytes = $allBytes[16..($allBytes.Length - 1)]
+
+    $keys = Derive-KeyIV -Password $password -Salt $salt
+
+    $aes = [System.Security.Cryptography.Aes]::Create()
+    $aes.Key = $keys.Key
+    $aes.IV  = $keys.IV
+
+    $ms = New-Object System.IO.MemoryStream
+    $cs = New-Object System.Security.Cryptography.CryptoStream $ms, $aes.CreateDecryptor(), 'Write'
+    try {
+        $cs.Write($cipherBytes, 0, $cipherBytes.Length)
+        $cs.Close()
+        $plainText = [System.Text.Encoding]::UTF8.GetString($ms.ToArray())
+        Set-Content -Path $OutputFile -Value $plainText
+        Write-Host "File decrypted and saved to $OutputFile"
+    } catch {
+        Write-Error "Decryption failed. Possibly wrong password or corrupted file."
+    }
+}
+
+
 Export-ModuleMember -Function Get-GeoLocationInfo, Grant-LocationAccess, Revoke-LocationAccess, 
     Disable-SSL2.0, Disable-SSL3.0, Disable-TLS1.0, Disable-TLS1.1, Enable-TLS1.2, Enable-TLS1.3, 
     Get-SecureProtocolStatus, Enable-SecureProtocols, Show-ActiveRemoteConnections,
@@ -1433,4 +1564,6 @@ Export-ModuleMember -Function Get-GeoLocationInfo, Grant-LocationAccess, Revoke-
     Enable-BlockWebshellCreation, Disable-BlockWebshellCreation,
     Enable-BlockSafeModeReboot, Disable-BlockSafeModeReboot,
     Enable-BlockImpersonatedTools, Disable-BlockImpersonatedTools,
-    Disable-MicrosoftWidgets, Disable-StartMenuNetworkCapabilities
+    Disable-MicrosoftWidgets, Disable-StartMenuNetworkCapabilities,
+    ConvertFrom-SecureStringToPlainText, Get-KeyIV, Remove-FileWithOverwrite,
+    Protect-FileBasic, Unprotect-FileBasic

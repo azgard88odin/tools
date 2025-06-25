@@ -171,7 +171,10 @@ function Get-CyberNews {
         "https://feeds.feedburner.com/TheHackersNews",
         "https://www.darkreading.com/rss.xml",
         "https://www.cyberscoop.com/feed/",
-        "https://krebsonsecurity.com/feed/"
+        "https://krebsonsecurity.com/feed/",
+        "https://www.securityweek.com/feed/",
+        "https://threatpost.com/feed/"
+
     )
 
     $newsItems = @()
@@ -305,4 +308,4 @@ function Get-CyberNews {
 
 Export-ModuleMember -Function Set-DesktopWallpaper, Set-LockScreenWallpaper, Show-CryptoRate,
 Show-CryptoRates, Get-CryptoPrices, Set-AutoHideTaskbar, Set-TaskbarAlignment, Show-CustomCommands,
-Update-CustomModules, Show-CyberNews
+Update-CustomModules, Get-CyberNews

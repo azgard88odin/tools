@@ -264,7 +264,8 @@ function Set-DynamicIP {
 }
 
 function Get-ActiveNetworkInterface {
-    $defaultRoute = Get-NetRoute -DestinationPrefix "0.0.0.0/0" | Where-Object { $_.NextHop -ne "::" } | Sort-Object RouteMetric | Select-Object -First 1
+    $activeInterfaces = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" }).ifIndex
+    $defaultRoute = Get-NetRoute -DestinationPrefix "0.0.0.0/0" | Where-Object { $_.NextHop -ne "::" -and $_.ifIndex -in $activeInterfaces } | Sort-Object RouteMetric | Select-Object -First 1
     return Get-NetAdapter | Where-Object { $_.InterfaceIndex -eq $defaultRoute.InterfaceIndex -and $_.HardwareInterface -eq "True" }
 }
 

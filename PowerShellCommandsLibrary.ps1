@@ -182,6 +182,9 @@ Get-ChildItem -Path "C:\Windows\Prefetch" -Filter "*access*"
 # Format dates from file properties
 (Get-ChildItem -Path "C:\Windows\Prefetch" -Filter "*access*" | Select-Object *).LastAccessTime.ToString('MM/dd/yyyy')
 
+# Map a directory to a drive letter for all users
+New-PSDrive -Name "Z" -PSProvider FileSystem -Root "\\IP_ADDRESS\Path\to\folder" -Persist
+
 # Compress files into a zip archive
 Compress-Archive -Path "C:\Path\To\Directory" -DestinationPath "C:\Path\To\Archive.zip"
 
